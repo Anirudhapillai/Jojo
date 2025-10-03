@@ -394,6 +394,7 @@
       <span>Score: <span id="snakeScore">0</span></span>
     </div>
     <canvas id="snakeCanvas" width="400" height="400"></canvas>
+    <p>Use arrow keys to move. Avoid walls and your tail!</p>
   </div>
 
   <!-- Tic Tac Toe -->
@@ -403,6 +404,7 @@
       <span>O Wins: <span id="oWins">0</span></span>
     </div>
     <table id="ticTacToe"></table>
+    <p>You are X, click to place your mark. Computer is O.</p>
   </div>
 
   <!-- Memory Game -->
@@ -413,6 +415,7 @@
     </div>
     <div id="memory"></div>
     <button onclick="resetMemory()" style="margin-top: 1rem; padding: 0.5rem 1rem; background: var(--accent-color); color: white; border: none; border-radius: 10px; cursor: pointer;">Reset</button>
+    <p>Flip cards to find matches!</p>
   </div>
 
   <!-- Rock Paper Scissors -->
@@ -434,10 +437,10 @@
   <!-- Win Modal -->
   <div id="winModal" class="modal">
     <div class="modal-content">
-      <h2 id="modalTitle">Victory!</h2>
+      <h2 id="modalTitle">🎉 Victory! 🎉</h2>
       <p id="modalMessage"></p>
       <button onclick="closeModal()">Play Again</button>
-      <button onclick="showMenu()">Menu</button>
+      <button onclick="showMenu()">Back to Menu</button>
     </div>
   </div>
 
@@ -478,9 +481,10 @@
 
     // Music Controls
     playBtn.onclick = () => {
-      music.play();
-      playBtn.style.display = 'none';
-      pauseBtn.style.display = 'inline-block';
+      music.play().then(() => {
+        playBtn.style.display = 'none';
+        pauseBtn.style.display = 'inline-block';
+      }).catch(e => console.log('Play failed:', e));
     };
 
     pauseBtn.onclick = () => {
@@ -534,6 +538,7 @@
     let food = {};
     let snakeInterval;
     let snakeScore = 0;
+    let directionHandler;
 
     function startSnake() {
       clearInterval(snakeInterval);
@@ -543,7 +548,9 @@
       updateScore('snake', 0);
       food = randomFood();
       snakeInterval = setInterval(drawSnake, 150);
-      document.addEventListener('keydown', changeDirection);
+      if (directionHandler) document.removeEventListener('keydown', directionHandler);
+      directionHandler = changeDirection;
+      document.addEventListener('keydown', directionHandler);
     }
 
     function drawSnake() {
@@ -553,6 +560,7 @@
         ctx.fillStyle = `hsl(${120 - index * 2}, 100%, 50%)`;
         ctx.fillRect(part.x, part.y, 20, 20);
         ctx.strokeStyle = '#fff';
+        ctx.lineWidth = 1;
         ctx.strokeRect(part.x, part.y, 20, 20);
       });
       // Draw food
@@ -573,18 +581,24 @@
       if (head.x < 0 || head.y < 0 || head.x >= 400 || head.y >= 400 || snake.slice(1).some(p => p.x === head.x && p.y === head.y)) {
         clearInterval(snakeInterval);
         showWinModal('Game Over! Final Score: ' + snakeScore, 'snake');
-        document.removeEventListener('keydown', changeDirection);
+        if (directionHandler) document.removeEventListener('keydown', directionHandler);
       }
     }
 
     function changeDirection(e) {
-      const LEFT = 37, UP = 38, RIGHT = 39, DOWN = 40;
-      if ((e.keyCode === LEFT && dx !== 20) || (e.keyCode === RIGHT && dx !== -20)) { dx = e.keyCode === LEFT ? -20 : 20; dy = 0; }
-      if ((e.keyCode === UP && dy !== 20) || (e.keyCode === DOWN && dy !== -20)) { dx = 0; dy = e.keyCode === UP ? -20 : 20; }
+      const key = e.key;
+      if (key === 'ArrowLeft' && dx !== 20) { dx = -20; dy = 0; }
+      if (key === 'ArrowUp' && dy !== 20) { dx = 0; dy = -20; }
+      if (key === 'ArrowRight' && dx !== -20) { dx = 20; dy = 0; }
+      if (key === 'ArrowDown' && dy !== -20) { dx = 0; dy = 20; }
     }
 
     function randomFood() {
-      return {x: Math.floor(Math.random() * 20) * 20, y: Math.floor(Math.random() * 20) * 20};
+      let newFood;
+      do {
+        newFood = {x: Math.floor(Math.random() * 20) * 20, y: Math.floor(Math.random() * 20) * 20};
+      } while (snake.some(part => part.x === newFood.x && part.y === newFood.y));
+      return newFood;
     }
 
     // Tic Tac Toe Enhanced
@@ -617,28 +631,53 @@
           if (currentPlayer === 'X') xWins++; else oWins++;
           updateScore('x', xWins);
           updateScore('o', oWins);
-          showWinModal(currentPlayer + ' Wins!', 'tictactoe');
+          setTimeout(() => showWinModal(currentPlayer + ' Wins!', 'tictactoe'), 500);
         } else if (board.flat().every(x => x !== '')) {
-          showWinModal('It\'s a Draw!', 'tictactoe');
+          setTimeout(() => showWinModal('It\'s a Draw!', 'tictactoe'), 500);
         } else {
           currentPlayer = currentPlayer === 'X' ? 'O' : 'X';
+          // Simple AI move for O
+          if (currentPlayer === 'O') {
+            setTimeout(aiMove, 500);
+          }
+        }
+      }
+    }
+
+    function aiMove() {
+      let available = [];
+      for (let i = 0; i < 3; i++) {
+        for (let j = 0; j < 3; j++) {
+          if (board[i][j] === '') available.push({i, j});
+        }
+      }
+      if (available.length > 0) {
+        let move = available[Math.floor(Math.random() * available.length)];
+        board[move.i][move.j] = 'O';
+        let cells = document.querySelectorAll('#ticTacToe td');
+        let cellIndex = move.i * 3 + move.j;
+        cells[cellIndex].textContent = 'O';
+        cells[cellIndex].style.color = '#0000ff';
+        if (checkWin()) {
+          oWins++;
+          updateScore('o', oWins);
+          setTimeout(() => showWinModal('O Wins!', 'tictactoe'), 500);
+        } else if (board.flat().every(x => x !== '')) {
+          setTimeout(() => showWinModal('It\'s a Draw!', 'tictactoe'), 500);
         }
       }
     }
 
     function checkWin() {
-      const wins = [
-        [0,1,2], [3,4,5], [6,7,8],
-        [0,3,6], [1,4,7], [2,5,8],
-        [0,4,8], [2,4,6]
-      ];
-      for (let win of wins) {
-        let [a, b, c] = [win[0]%3, win[0]%3 + (win[1]%3)*3, wait no, better flat index
-        actually:
+      // Rows
       for (let i = 0; i < 3; i++) {
         if (board[i][0] && board[i][0] === board[i][1] && board[i][1] === board[i][2]) return true;
+      }
+      // Columns
+      for (let i = 0; i < 3; i++) {
         if (board[0][i] && board[0][i] === board[1][i] && board[1][i] === board[2][i]) return true;
       }
+      // Diagonals
       if (board[0][0] && board[0][0] === board[1][1] && board[1][1] === board[2][2]) return true;
       if (board[0][2] && board[0][2] === board[1][1] && board[1][1] === board[2][0]) return true;
       return false;
@@ -662,7 +701,6 @@
         let card = document.createElement('button');
         card.className = 'memory-card';
         card.dataset.sym = sym;
-        card.dataset.index = index;
         card.textContent = '❓';
         card.onclick = () => flipCard(card);
         memory.appendChild(card);
@@ -682,15 +720,17 @@
               memoryFlipped.forEach(c => c.classList.add('matched'));
               if (document.querySelectorAll('.matched').length === 16) {
                 clearInterval(memoryInterval);
-                showWinModal('You Matched All! Flips: ' + memoryFlips + ' in ' + Math.floor((Date.now() - memoryStartTime)/1000) + 's', 'memory');
+                let timeElapsed = Math.floor((Date.now() - memoryStartTime) / 1000);
+                showWinModal(`You Matched All! Flips: ${memoryFlips} in ${timeElapsed}s`, 'memory');
               }
+              memoryFlipped = [];
             } else {
               memoryFlipped.forEach(c => {
                 c.classList.remove('flipped');
                 c.textContent = '❓';
               });
+              memoryFlipped = [];
             }
-            memoryFlipped = [];
           }, 1000);
         }
       }
@@ -702,6 +742,7 @@
     }
 
     function resetMemory() {
+      clearInterval(memoryInterval);
       startMemory();
     }
 
@@ -722,12 +763,14 @@
         playerWins++;
         result = "You win!";
         updateScore('player', playerWins);
+        showWinModal(result, 'rps'); // Optional mini-celebration
       } else {
         aiWins++;
         result = "AI wins!";
         updateScore('ai', aiWins);
+        showWinModal(result, 'rps'); // Optional
       }
-      document.getElementById('rpsResult').innerHTML = `You: ${choice} | AI: ${ai} → ${result}`;
+      document.getElementById('rpsResult').innerHTML = `You: ${['✊','✋','✌'][options.indexOf(choice)]} | AI: ${['✊','✋','✌'][options.indexOf(ai)]} → ${result}`;
     }
 
     function resetRPS() {
@@ -740,24 +783,35 @@
 
     // Utility Functions
     function updateScore(type, value) {
-      if (type === 'snake') document.getElementById('snakeScore').textContent = value;
-      if (type === 'x') document.getElementById('xWins').textContent = value;
-      if (type === 'o') document.getElementById('oWins').textContent = value;
-      if (type === 'memoryFlips') document.getElementById('memoryFlips').textContent = value;
-      if (type === 'memoryTime') document.getElementById('memoryTime').textContent = value;
-      if (type === 'player') document.getElementById('playerWins').textContent = value;
-      if (type === 'ai') document.getElementById('aiWins').textContent = value;
+      const elements = {
+        snake: 'snakeScore',
+        x: 'xWins',
+        o: 'oWins',
+        memoryFlips: 'memoryFlips',
+        memoryTime: 'memoryTime',
+        player: 'playerWins',
+        ai: 'aiWins'
+      };
+      if (elements[type]) {
+        document.getElementById(elements[type]).textContent = value;
+      }
     }
 
     function showWinModal(message, game) {
-      document.getElementById('modalTitle').textContent = '🎉 Victory! 🎉';
+      document.getElementById('modalTitle').textContent = '🎉 ' + (message.includes('Game Over') ? 'Try Again!' : 'Victory!') + ' 🎉';
       document.getElementById('modalMessage').textContent = message;
       modal.style.display = 'flex';
       if (game === 'snake') {
         clearInterval(snakeInterval);
-        document.removeEventListener('keydown', changeDirection);
+        if (directionHandler) document.removeEventListener('keydown', directionHandler);
       } else if (game === 'memory') {
         clearInterval(memoryInterval);
+      }
+      // For RPS, modal closes quickly or optional
+      if (game === 'rps') {
+        setTimeout(() => {
+          closeModal();
+        }, 1500);
       }
     }
 
