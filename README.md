@@ -28,8 +28,8 @@
     }
     nav button {
       margin: 10px;
-      padding: 12px 24px;
-      font-size: 1em;
+      padding: 14px 28px;
+      font-size: 1.1em;
       border: none;
       border-radius: 12px;
       cursor: pointer;
@@ -42,7 +42,7 @@
       transform: scale(1.1);
     }
     canvas, table, .game {
-      background: rgba(255,255,255,0.85);
+      background: rgba(255,255,255,0.9);
       border-radius: 12px;
       box-shadow: 0 0 15px rgba(0,0,0,0.3);
       margin: 20px auto;
@@ -52,8 +52,8 @@
       z-index: 2;
     }
     #ticTacToe td {
-      width: 70px;
-      height: 70px;
+      width: 80px;
+      height: 80px;
       text-align: center;
       vertical-align: middle;
       font-size: 2em;
@@ -88,7 +88,7 @@
       from { transform: translateY(100vh) scale(1); opacity: 1; }
       to { transform: translateY(-10vh) scale(0.5); opacity: 0; }
     }
-    audio {
+    audio, #playMusicBtn {
       position: fixed;
       bottom: 10px;
       left: 10px;
@@ -108,7 +108,7 @@
   </nav>
 
   <!-- Snake Game -->
-  <canvas id="snake" width="300" height="300"></canvas>
+  <canvas id="snake" width="320" height="320"></canvas>
 
   <!-- Tic Tac Toe -->
   <table id="ticTacToe"></table>
@@ -125,74 +125,80 @@
     <p id="rpsResult"></p>
   </div>
 
-  <!-- Background Phonk Music -->
-  <audio controls autoplay loop>
+  <!-- Music Button -->
+  <button id="playMusicBtn">▶ Play Phonk Music</button>
+  <audio id="bgMusic" loop>
     <source src="https://cdn.pixabay.com/audio/2023/05/01/audio_d2a6a36c3b.mp3" type="audio/mpeg">
   </audio>
 
   <script>
-    // Background floating hearts
-    function spawnHeart() {
-      const heart = document.createElement('div');
-      heart.className = 'heart';
-      heart.style.left = Math.random()*100 + 'vw';
-      heart.style.animationDuration = (5+Math.random()*5) + 's';
-      heart.textContent = '❤️';
+    // Music play fix for all devices
+    const music = document.getElementById('bgMusic');
+    const playBtn = document.getElementById('playMusicBtn');
+    playBtn.onclick = () => {
+      music.play();
+      playBtn.style.display = 'none';
+    };
+
+    // Floating hearts
+    function spawnHeart(){
+      const heart=document.createElement('div');
+      heart.className='heart';
+      heart.style.left=Math.random()*100+'vw';
+      heart.style.animationDuration=(5+Math.random()*5)+'s';
+      heart.textContent='❤️';
       document.getElementById('bg').appendChild(heart);
-      setTimeout(() => heart.remove(), 8000);
+      setTimeout(()=>heart.remove(),8000);
     }
-    setInterval(spawnHeart, 600);
+    setInterval(spawnHeart,600);
 
     // Switch games
-    function showGame(game) {
-      ['snake','ticTacToe','memory','rps'].forEach(id => {
-        document.getElementById(id).style.display = 'none';
+    function showGame(game){
+      ['snake','ticTacToe','memory','rps'].forEach(id=>{
+        document.getElementById(id).style.display='none';
       });
-      if (game === 'snake') { document.getElementById('snake').style.display = 'block'; startSnake(); }
-      if (game === 'tictactoe') { document.getElementById('ticTacToe').style.display = 'table'; startTicTacToe(); }
-      if (game === 'memory') { document.getElementById('memory').style.display = 'block'; startMemory(); }
-      if (game === 'rps') { document.getElementById('rps').style.display = 'block'; }
+      if(game==='snake'){document.getElementById('snake').style.display='block';startSnake();}
+      if(game==='tictactoe'){document.getElementById('ticTacToe').style.display='table';startTicTacToe();}
+      if(game==='memory'){document.getElementById('memory').style.display='block';startMemory();}
+      if(game==='rps'){document.getElementById('rps').style.display='block';}
     }
 
     /* SNAKE */
-    let snakeCanvas = document.getElementById('snake');
-    let ctx = snakeCanvas.getContext('2d');
-    let snake, food, dx, dy, snakeInterval;
-
-    function startSnake() {
+    let snakeCanvas=document.getElementById('snake');
+    let ctx=snakeCanvas.getContext('2d');
+    let snake,food,dx,dy,snakeInterval;
+    function startSnake(){
       clearInterval(snakeInterval);
-      snake = [{x: 150, y: 150}];
-      dx = 10; dy = 0;
-      food = randomFood();
-      snakeInterval = setInterval(drawSnake, 100);
-      document.addEventListener("keydown", changeDirection);
+      snake=[{x:160,y:160}];
+      dx=10; dy=0;
+      food=randomFood();
+      snakeInterval=setInterval(drawSnake,100);
+      document.onkeydown=changeDirection;
     }
-    function drawSnake() {
-      ctx.clearRect(0,0,300,300);
-      ctx.fillStyle = 'lime';
-      snake.forEach(part => ctx.fillRect(part.x, part.y, 10, 10));
-      ctx.fillStyle = 'red';
-      ctx.fillRect(food.x, food.y, 10, 10);
-      let head = {x: snake[0].x + dx, y: snake[0].y + dy};
+    function drawSnake(){
+      ctx.clearRect(0,0,320,320);
+      ctx.fillStyle='lime';
+      snake.forEach(p=>ctx.fillRect(p.x,p.y,10,10));
+      ctx.fillStyle='red';
+      ctx.fillRect(food.x,food.y,10,10);
+      let head={x:snake[0].x+dx,y:snake[0].y+dy};
       snake.unshift(head);
-      if (head.x === food.x && head.y === food.y) food = randomFood(); else snake.pop();
-      if (head.x < 0 || head.y < 0 || head.x >= 300 || head.y >= 300 || snake.slice(1).some(p => p.x===head.x && p.y===head.y)) {
-        alert("Game Over!");
-        startSnake();
+      if(head.x===food.x&&head.y===food.y){food=randomFood();}else{snake.pop();}
+      if(head.x<0||head.y<0||head.x>=320||head.y>=320||snake.slice(1).some(p=>p.x===head.x&&p.y===head.y)){
+        alert("Game Over!");startSnake();
       }
     }
-    function changeDirection(e) {
-      if (e.key === 'ArrowUp' && dy === 0) { dx=0; dy=-10; }
-      if (e.key === 'ArrowDown' && dy === 0) { dx=0; dy=10; }
-      if (e.key === 'ArrowLeft' && dx === 0) { dx=-10; dy=0; }
-      if (e.key === 'ArrowRight' && dx === 0) { dx=10; dy=0; }
+    function changeDirection(e){
+      if(e.key==='ArrowUp'&&dy===0){dx=0;dy=-10;}
+      if(e.key==='ArrowDown'&&dy===0){dx=0;dy=10;}
+      if(e.key==='ArrowLeft'&&dx===0){dx=-10;dy=0;}
+      if(e.key==='ArrowRight'&&dx===0){dx=10;dy=0;}
     }
-    function randomFood(){ return {x:Math.floor(Math.random()*30)*10,y:Math.floor(Math.random()*30)*10}; }
+    function randomFood(){return{x:Math.floor(Math.random()*32)*10,y:Math.floor(Math.random()*32)*10};}
 
     /* TIC TAC TOE */
-    let board, currentPlayer;
+    let board,currentPlayer;
     function startTicTacToe(){
-      board=[["","",""]],["","",""]],["","",""]];
       board=[["","",""],["","",""],["","",""]];
       currentPlayer="X";
       let table=document.getElementById('ticTacToe');
@@ -211,43 +217,45 @@
       if(board[i][j]===""){
         board[i][j]=currentPlayer;
         cell.textContent=currentPlayer;
-        if(checkWin()){ alert(currentPlayer+" Wins!"); startTicTacToe(); }
-        else if(board.flat().every(x=>x!="")){ alert("Draw!"); startTicTacToe(); }
+        if(checkWin()){alert(currentPlayer+" Wins!");startTicTacToe();}
+        else if(board.flat().every(x=>x!="")){alert("Draw!");startTicTacToe();}
         else currentPlayer=currentPlayer==="X"?"O":"X";
       }
     }
     function checkWin(){
-      for(let i=0;i<3;i++){ if(board[i][0]&&board[i][0]===board[i][1]&&board[i][1]===board[i][2])return true; if(board[0][i]&&board[0][i]===board[1][i]&&board[1][i]===board[2][i])return true; }
+      for(let i=0;i<3;i++){
+        if(board[i][0]&&board[i][0]===board[i][1]&&board[i][1]===board[i][2])return true;
+        if(board[0][i]&&board[0][i]===board[1][i]&&board[1][i]===board[2][i])return true;
+      }
       if(board[0][0]&&board[0][0]===board[1][1]&&board[1][1]===board[2][2])return true;
       if(board[0][2]&&board[0][2]===board[1][1]&&board[1][1]===board[2][0])return true;
       return false;
     }
 
-    /* MEMORY GAME */
-    let memoryCards, memoryFlipped;
+    /* MEMORY */
+    let memoryFlipped;
     function startMemory(){
       let memory=document.getElementById('memory');
       memory.innerHTML="";
       const symbols=["🍓","🍓","🍒","🍒","🍉","🍉","🥝","🥝","🍍","🍍","🍇","🍇"];
       symbols.sort(()=>0.5-Math.random());
-      memoryCards=[]; memoryFlipped=[];
-      symbols.forEach((sym,i)=>{
+      memoryFlipped=[];
+      symbols.forEach(sym=>{
         let card=document.createElement('button');
         card.textContent="❓";
         card.style.fontSize="2em";
+        card.style.margin="5px";
         card.onclick=()=>flipCard(card,sym);
         memory.appendChild(card);
       });
     }
     function flipCard(card,sym){
-      if(memoryFlipped.length<2 && card.textContent==="❓"){
+      if(memoryFlipped.length<2&&card.textContent==="❓"){
         card.textContent=sym;
         memoryFlipped.push({card,sym});
         if(memoryFlipped.length===2){
-          if(memoryFlipped[0].sym===memoryFlipped[1].sym){ memoryFlipped=[]; }
-          else {
-            setTimeout(()=>{ memoryFlipped.forEach(c=>c.card.textContent="❓"); memoryFlipped=[]; },1000);
-          }
+          if(memoryFlipped[0].sym===memoryFlipped[1].sym){memoryFlipped=[];}
+          else{setTimeout(()=>{memoryFlipped.forEach(c=>c.card.textContent="❓");memoryFlipped=[];},1000);}
         }
       }
     }
@@ -260,7 +268,7 @@
       if(choice===ai) result="It's a draw!";
       else if((choice==='rock'&&ai==='scissors')||(choice==='paper'&&ai==='rock')||(choice==='scissors'&&ai==='paper')) result="You win!";
       else result="AI wins!";
-      document.getElementById('rpsResult').textContent = `You: ${choice} | AI: ${ai} → ${result}`;
+      document.getElementById('rpsResult').textContent=`You: ${choice} | AI: ${ai} → ${result}`;
     }
   </script>
 </body>
